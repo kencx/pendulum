@@ -45,4 +45,8 @@ def test_example():
     test_system = system(pendulums)
     animate_pendulum(test_system, 30)
 
+<<<<<<< HEAD
 test_example()
+=======
+test_example
+>>>>>>> 7f6a4579c925cc4f97a13476ab06d1bc5007fa8c
