@@ -1,0 +1,9 @@
+<<<<<<< current
+Pendulum project to do:
+
+Methods.py:
+Write out different methods of integration to solve dynamics of system (Euler, Midpoint theorem)
+Develop Lagragian and Hamiltonian methods to solve dynamics of system
+
+
+Graph out variables of pendulum (theta1 against theta 2, acc and vel over time etc.)
