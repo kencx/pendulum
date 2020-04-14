@@ -37,13 +37,12 @@ class system:
         return any(isinstance(pendulum,Double_Pendulum) for pendulum in self.pendulums)
 
 
-# INPUT HERE
-pendulum1 = Pendulum(1.0, 2.0, 150, 0)
-pendulum2 = Pendulum(1.0, 2.0, 150, 0)
-pendulum3 = Double_Pendulum(pendulum1, pendulum2)
-pendulum4 = Double_Pendulum(Pendulum(1.0,2.0,151,0), Pendulum(1.0,2.0,151,0))
-pendulums = [pendulum3,pendulum4]
 
-test_system = system(pendulums)
+def test_example():
+    pendulum1 = Pendulum(1.0, 2.0, 150, 0)
+    pendulum2 = Pendulum(1.0, 2.0, 150, 0)
+    pendulum3 = Double_Pendulum(pendulum1, pendulum2)
+    test_system = system(pendulums)
+    animate_pendulum(test_system, 30)
 
-animate_pendulum(test_system, 30)
+test_example
