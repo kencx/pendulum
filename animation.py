@@ -1,9 +1,10 @@
 import numpy as np
+from random import choice
 import matplotlib.pyplot as plt
 from matplotlib import animation
 
 
-def animate_pendulum(system, time, hide_axis=True, save=True):
+def animate_pendulum(system, time, hide_axis=True, save=False):
 
     '''
     Args:
@@ -19,32 +20,29 @@ def animate_pendulum(system, time, hide_axis=True, save=True):
     T = np.linspace(0, time, N)
 
     state = system.state
-
-    if system.double_present:
-        max_x = max([max(state[1]) for state in state])
-        max_y = max([max(state[3]) for state in state])
-    else:
-        max_x = max([max(state[0]) for state in state])
-        max_y = max([max(state[1]) for state in state])
+    max_l = max([pendulum.length for pendulum in system.pendulums]) # max length among all pendulums
 
     fig = plt.figure()
-    ax = plt.axes(xlim=(-(max_x+1), max_x+1), ylim=(-(max_y+1), max_y+1))
+    ax = plt.axes(xlim=(-(max_l+1), max_l+1), ylim=(-(max_l+1), max_l+1))
+    ax.set_aspect('equal')
 
     if hide_axis:
         plt.axis('off')
-
-    ax.set_aspect('equal')
-
+    
+    # text for running time
     time_temp = 'time = %.1fs'
     time_text = ax.text(0.05, 0.9, '', transform=ax.transAxes)
 
+    # initialize lines and paths
     lines = []
     paths = []
-    # path_x, path_y = [], []
 
+    colours = ['b', 'g', 'k', 'o', 'c', 'm']
+
+    # for each pendulum
     for i in range(len(state)):
-        lobj = ax.plot([],[],'o-',lw=1.5, c='C1')[0]
-        pobj = ax.plot([],[],'--',lw=0.5, alpha = 0.7)[0]
+        lobj = ax.plot([],[],'o-',lw=1.5, c=choice(colours))[0]
+        pobj = ax.plot([],[],'--',lw=0.5, c=choice(colours), alpha = 0.7)[0]
         lines.append(lobj)
         paths.append(pobj)
 
@@ -55,7 +53,6 @@ def animate_pendulum(system, time, hide_axis=True, save=True):
     #         paths[l].set_data([],[])
     #     time_text.set_text('')
     #     return lines, paths, time_text
-
 
     def single_pend_animate(i):
 
@@ -90,7 +87,7 @@ def animate_pendulum(system, time, hide_axis=True, save=True):
 
 
     # Animation object
-    if system.double_present:
+    if system.double:
         anim = animation.FuncAnimation(
                                 fig,
                                 double_pend_animate,    # animate(frames)
@@ -112,5 +109,6 @@ def animate_pendulum(system, time, hide_axis=True, save=True):
     plt.show()
 
 
-    if save:
-        anim.save('pendulum.mp4')
+    # if save:
+    #     anim.save('pendulum.mp4')
+
