@@ -2,3 +2,5 @@ todo.txt
 findings.txt
 
 tests.py
+
+__pycache__
