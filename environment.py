@@ -9,25 +9,25 @@ class system:
     pendulums (list): list of pendulums
 
     double (bool): Check if double pendulums are present among input pendulums
-    state (array): Array of pendulum states at dt
+    state (array): Array of states of each pendulum at dt
 
     '''
     def __init__(self, pendulums):
         self.pendulums = pendulums
-        self.double = self.double() # check if any double pendulums present
-        self.state = self.state()
+        self.double = self.double()
+        self.state = self.state() 
 
     def state(self):
-        final_state = []
+        state_array = []
 
         if self.double:
             for pendulum in self.pendulums:
-                final_state.append((pendulum.position[0], pendulum.position[1], pendulum.position[2], pendulum.position[3])) # (x1, x2, y1, y2)
+                state_array.append((pendulum.position[0], pendulum.position[1], pendulum.position[2], pendulum.position[3])) # (x1, x2, y1, y2)
         else:
             for pendulum in self.pendulums:
-                final_state.append((pendulum.position[0], pendulum.position[1])) # (x, y)
+                state_array.append((pendulum.position[0], pendulum.position[1])) # (x, y)
 
-        return final_state
+        return state_array
 
     def double(self):
         return any(isinstance(pendulum,Double_Pendulum) for pendulum in self.pendulums)

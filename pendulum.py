@@ -29,24 +29,27 @@ class Pendulum():
         self.mass = mass
         self.theta = np.radians(theta)
         self.omega = omega
-        self.state = np.array([np.radians(theta), omega])
+        self.initial_state = np.array([np.radians(theta), omega])
         self.solution = self.sol(method)
         self.position = self.get_pos()
 
 
     def get_pos(self):
+
         '''
         input: solution state of pendulum at timestep dt
         output: x, y coordinates of pendulum at timestep dt
         '''
+
         x_coord = self.length*np.sin(self.solution[:,0])
         y_coord = -self.length*np.cos(self.solution[:,0])
-        return [x_coord,y_coord]
+        return np.array([x_coord,y_coord])
 
 
     def sol(self, method):
 
         '''
+        input: method of numerical integration
         output: solution state of pendulum
         '''
 
@@ -61,7 +64,7 @@ class Pendulum():
             return f
 
         if method == odeint:
-            return odeint(Derivatives.pend, self.state, self.T, (self.length, self.g))
+            return odeint(Derivatives.pend, self.initial_state, self.T, (self.length, self.g))
 
 
 
@@ -77,33 +80,41 @@ class Double_Pendulum:
     def __init__(self, p1, p2, method=odeint):
 
         '''
-        Variables:
+        Args:
 
-        p1: Pendulum 1 (attached to pivot)
-        p2: Pendulum 2 (attached to Pendulum 1)
+        p1 (Pendulum): Pendulum 1 (attached to pivot)
+        p2 (Pendulum): Pendulum 2 (attached to Pendulum 1)
         '''
 
         self.p1 = p1
         self.p2 = p2
         self.length = p1.length + p2.length
-        self.state = np.array([p1.theta, p2.theta, p1.omega, p2.omega])
+        self.initial_state = np.array([p1.theta, p2.theta, p1.omega, p2.omega])
         self.solution = self.sol(method)
         self.position = self.get_pos()
-
+        self.states = self.get_states()
+        
 
     def get_pos(self):
+
         '''
         input: solution state of pendulum at timestep dt
         output: x, y coordinates of pendulum at timestep dt
         '''
+
         x1 = self.p1.length*np.sin(self.solution[:,0])
         x2 = x1+ self.p2.length*np.sin(self.solution[:,1])
         y1 = -self.p1.length*np.cos(self.solution[:,0])
         y2 = y1 - self.p2.length*np.cos(self.solution[:,1])
-        return [x1, x2, y1, y2]
+        return np.array([x1, x2, y1, y2])
 
 
     def sol(self, method):
+
+        '''
+        input: method of numerical integration
+        output: solution state of pendulum
+        '''
 
         if method == rk4 or method == euler:
             f = np.zeros([self.N, 4])
@@ -116,4 +127,12 @@ class Double_Pendulum:
             return f
 
         if method == odeint:
-            return odeint(Derivatives.double_pend, self.state, self.T, (self.p1.length, self.p2.length, self.p1.mass, self.p2.mass, self.g))
+            return odeint(Derivatives.double_pend, self.initial_state, self.T, (self.p1.length, self.p2.length, self.p1.mass, self.p2.mass, self.g))
+    
+
+    def get_states(self):
+        theta1 = self.solution[:,0]
+        theta2 = self.solution[:,1]
+        omega1 = self.solution[:,2]
+        omega2 = self.solution[:,3]
+        return np.array([theta1, theta2, omega1, omega2])

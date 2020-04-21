@@ -6,12 +6,13 @@ def euler(f, t, dt, derivs, *args):
     Euler method
 
     Args:
-    f (func): y_i
-    derivs (func): derivates of f
+    f (array): y_i
+    derivs (func): derivates
     t (int): time
 
     Outputs: y_(i+1)
     '''
+
     if derivs == Derivatives.pend:
         return f + derivs(f, t, args[0], args[1]) * dt
     
@@ -22,11 +23,11 @@ def euler(f, t, dt, derivs, *args):
 def rk4(f, t, dt, derivs, *args):
 
     '''
-    Runge-Kutta 4
+    Runge-Kutta 4 method
 
     Args:
-    f (func): y_i
-    derivs (func): derivates of f
+    f (array): y_i
+    derivs (func): derivates
     t (int): time
 
     Outputs: y_(i+1)
