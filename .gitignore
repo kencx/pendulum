@@ -4,3 +4,5 @@ findings.txt
 
 tests.py
 _tests
+
+**/__pycache__
