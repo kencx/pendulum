@@ -3,6 +3,8 @@ todo.txt
 findings.txt
 
 tests.py
-_tests
 
-**/__pycache__
+.vscode
+venv
+
+streamlit.py

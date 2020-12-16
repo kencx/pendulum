@@ -2,31 +2,39 @@ import numpy as np
 from random import choice
 import matplotlib.pyplot as plt
 from matplotlib import animation, cm, rc
+from methods import wrapping
 
 # rc('text', usetex=True)
 # rc('font', family='serif')
+
+'''
+add file name into save argument
+find a way to incorporate time into animate functions, and allow it to control the time for the pendulum functions
+'''
 
 time = 30
 N = 1000
 timestep = time/(N-1)
 T = np.linspace(0, time, N)
 
-def animate_pendulum(system, hide_axis=True, save=False):
+def animate_pendulum(system, hide_path=False, hide_axis=True, save=False):
 
     '''
+    Generates an animation of a system of pendulums (without graphs)
+
     Args:
     system (list): system of pendulum(s) to be simulated
-    # time (int): time to run simulation
+    hide_path (bool): hide trails of pendulum
     hide_axis (bool): default True hides axis of simulation
     save (bool): default True saves mp4 file of simulation
-
     '''
 
-    state = system.state
-    max_l = max([pendulum.length for pendulum in system.pendulums]) # max length among all pendulums
+    state = system.state_array
 
-    fig = plt.figure()
-    ax = plt.axes(xlim=(-(max_l+1), max_l+1), ylim=(-(max_l+1), max_l+1))
+    max_l = max([p.length for p in system.pendulums]) # max length among all pendulums
+
+    fig = plt.figure(figsize=(6,6))
+    ax = plt.axes(xlim=(-(max_l+1), max_l+1), ylim=(-(max_l+1), max_l+1)) # set axis limits
     ax.set_aspect('equal')
 
     if hide_axis:
@@ -39,14 +47,17 @@ def animate_pendulum(system, hide_axis=True, save=False):
     # initialize lines and paths
     lines, paths = [], []
 
-    cmap = cm.get_cmap('Spectral')
+    # colour map
+    cmap = cm.get_cmap('rainbow')
 
-    # for each pendulum
+    # for each pendulum, generate a line and path obj
     for i in range(len(state)):
         lobj = ax.plot([],[],'o-',lw=1.5, c=cmap(0.1*i))[0]
-        pobj = ax.plot([],[],'--',lw=0.5, c=cmap(0.1*i), alpha = 0.7)[0]
         lines.append(lobj)
-        paths.append(pobj)
+        
+        if not hide_path:
+            pobj = ax.plot([],[],'--',lw=0.5, c=cmap(0.1*i), alpha = 0.7)[0]
+            paths.append(pobj)
 
     # Initialize base frame
     # def init():
@@ -56,58 +67,39 @@ def animate_pendulum(system, hide_axis=True, save=False):
     #     time_text.set_text('')
     #     return lines, paths, time_text
 
-
-    def single_pend_animate(i):
+    def animate(i):
 
         for lnum in range(len(lines)):
-            x = [0, state[lnum][0][i]]
-            y = [0, state[lnum][1][i]]
+            
+            if not system.double: # for single pendulums
 
-            path_x = [state[lnum][0][i] for i in range(0,i)]
-            path_y = [state[lnum][1][i] for i in range(0,i)]
+                # position of pendulum
+                x = [0, state[lnum][i,0]] # 0 is required to set pivot at the origin
+                y = [0, state[lnum][i,1]]
+
+                if not hide_path:
+                    # path of pendulum
+                    path_x = state[lnum][:i,0]
+                    path_y = state[lnum][:i,1]
+            
+            else: 
+                # for double pendulums
+                x = [0, state[lnum][i,0], state[lnum][i,1]] # 0 is required to set pivot at the origin
+                y = [0, state[lnum][i,2], state[lnum][i,3]]
+            
+                if not hide_path:
+                    path_x = state[lnum][:i,1]
+                    path_y = state[lnum][:i,3]
 
             lines[lnum].set_data(x,y)
-            paths[lnum].set_data(path_x, path_y)
+            if not hide_path:
+                paths[lnum].set_data(path_x, path_y)
 
         time_text.set_text(time_temp % (i*timestep))
         return lines, paths, time_text
-
-
-    def double_pend_animate(i):
-
-        for lnum in range(len(lines)):
-            x = [0, state[lnum][0][i], state[lnum][1][i]]
-            y = [0, state[lnum][2][i], state[lnum][3][i]]
-
-            path_x = [state[lnum][1][i] for i in range(0,i)]
-            path_y = [state[lnum][3][i] for i in range(0,i)]
-
-            lines[lnum].set_data(x, y)
-            paths[lnum].set_data(path_x, path_y)
-
-        time_text.set_text(time_temp % (i*timestep))
-        return lines, paths, time_text
-
 
     # Animation object
-    if system.double:
-        anim = animation.FuncAnimation(
-                                fig,
-                                double_pend_animate,    # animate(frames)
-                                # init_func=init,
-                                frames=np.arange(1, len(T)),
-                                interval=30,
-                                blit=False
-                                )
-    else:
-        anim = animation.FuncAnimation(
-                                fig,
-                                single_pend_animate,    # animate(frames)
-                                # init_func=init,
-                                frames=np.arange(1, len(T)),
-                                interval=30,
-                                blit=False
-                                )
+    anim = animation.FuncAnimation(fig, animate, frames=N, interval=30)
 
     if save:
         anim.save('_tests/animation.gif', writer='imagemagick', fps=30)
@@ -116,22 +108,35 @@ def animate_pendulum(system, hide_axis=True, save=False):
 
 
 
-def animate_pend_with_graph(system, hide_axis=False, save=False):
-
+def animate_pend_graph(system, graph, hide_axis=False, save=False):
+    
     '''
-    Animates a double pendulum system and draws a graph of theta2 against theta1
+    Animates a double pendulum system and with a graph of:
+        displacement: Plots theta2 against theta1
+        phase space: Plots angular velocity against angular displacement
 
+    Args:
+    system (list): system of pendulum(s) to be simulated
+    graph (str): Takes strings of 'displacement' or 'phase space' and draws the specificed graph.
+    # time (int): time to run simulation
+    hide_axis (bool): default True hides axis of simulation
+    save (bool): default True saves mp4 file of simulation
     '''
 
-    state = system.state
+    state = system.state_array
     max_l = max([pendulum.length for pendulum in system.pendulums]) # max length among all pendulums
 
-    fig, (ax1, ax2) = plt.subplots(1, 2)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8,8))
 
-    ax1.set_xlabel('theta1 (rad)')
-    ax1.set_ylabel('theta2 (rad)')
+    if graph == 'phase space':
+        ax1.set_xlabel('theta (rad)')
+        ax1.set_ylabel('omega (rad/s)')
 
-    ax2.set_xlim(-(max_l+1), max_l+1)
+    if graph == 'displacement': 
+        ax1.set_xlabel('theta1 (rad)')
+        ax1.set_ylabel('theta2 (rad)')
+
+    ax2.set_xlim(-(max_l+1), max_l+1) # set axis limits
     ax2.set_ylim(-(max_l+1), max_l+1)
     ax2.set_aspect('equal')
 
@@ -143,57 +148,58 @@ def animate_pend_with_graph(system, hide_axis=False, save=False):
     time_temp = 'time = %.1fs'
     time_text = ax2.text(0.05, 0.9, '', transform=ax2.transAxes)
 
-
     # initialize lines and paths
     lines1 = []
     lines2, paths2 = [], []
 
+    # colour map
     cmap = cm.get_cmap('Spectral')
 
-    # for each pendulum
+    # for each pendulum, generate graph, line and path objects
     for i in range(len(state)):
-        gobj = ax1.plot([],[], '-', lw=1, c='r')[0]
+        gobj = ax1.plot([],[], '-', ms=1, c='r')[0]
+
+        # pendulum objects
         lobj = ax2.plot([],[], 'o-', lw=1.5, c=cmap(0.1*i))[0]
         pobj = ax2.plot([],[], '--', lw=0.5, c=cmap(0.1*i), alpha = 0.7)[0]
+
         lines1.append(gobj)
         lines2.append(lobj)
         paths2.append(pobj)
 
 
-    # def single_pend_animate(i):
-
-    #     for lnum in range(len(lines)):
-    #         x = [0, state[lnum][0][i]]
-    #         y = [0, state[lnum][1][i]]
-
-    #         path_x = [state[lnum][0][i] for i in range(0,i)]
-    #         path_y = [state[lnum][1][i] for i in range(0,i)]
-
-    #         lines[lnum].set_data(x,y)
-    #         paths[lnum].set_data(path_x, path_y)
-
-    #     time_text.set_text(time_temp % (i*timestep))
-    #     return lines, paths, time_text
-
-
-    # list of tuples of arrays of theta1 and theta2 for all N
+    # list of arrays of theta1 and theta2 for all N
     graph_coords = []
-    for pendulum in system.pendulums:
-        graph_coords.append([pendulum.states[0], pendulum.states[1]])
 
-    def double_pend_animate(i):
+    for p in system.pendulums:
+        if graph == 'displacement':
+            # graph_coords.append([p.states[0], p.states[1]]) 
+            graph_coords.append(p.states[:,:2])
 
-        # for each pendulum
+        if graph == 'phase space':
+            p.states[:,0] = list(map(lambda x: wrapping(x), p.states[:,0])) # converts to -pi, pi range
+            graph_coords.append(p.states[:,0:3:2])
+            # pendulum.states[0] = list(map(lambda x: wrapping(x), pendulum.states[0])) 
+            # graph_coords.append([pendulum.states[0], pendulum.states[2]])
+        
+
+    def animate(i):
+
+        # for each pendulum in system
         for lnum in range(len(state)):
 
-            graph_x = [graph_coords[lnum][0][i] for i in range(0,i)]
-            graph_y = [graph_coords[lnum][1][i] for i in range(0,i)]
+            if i == 0:
+                graph_x, graph_y = [0], [0] # set initial axis limit
 
-            x = [0, state[lnum][0][i], state[lnum][1][i]]
-            y = [0, state[lnum][2][i], state[lnum][3][i]]
+            else:
+                graph_x = graph_coords[lnum][:i,0]
+                graph_y = graph_coords[lnum][:i,1]
 
-            path_x = [state[lnum][1][i] for i in range(0,i)]
-            path_y = [state[lnum][3][i] for i in range(0,i)]
+            x = [0, state[lnum][i,0], state[lnum][i,1]] # 0 is required to set pivot at the origin
+            y = [0, state[lnum][i,2], state[lnum][i,3]]
+
+            path_x = state[lnum][:i,1]
+            path_y = state[lnum][:i,3]
 
             lines1[lnum].set_data(graph_x, graph_y)
             lines2[lnum].set_data(x, y)
@@ -201,8 +207,8 @@ def animate_pend_with_graph(system, hide_axis=False, save=False):
 
             xmin, xmax = ax1.get_xlim()
             ymin, ymax = ax1.get_ylim()
-            if (max(graph_x) >= xmax) or (min(graph_x) <= xmin) or (max(graph_y) >= ymax) or (min(graph_y) <= ymin):
-                ax1.set_xlim(min(graph_x), max(graph_x))
+            if (max(graph_x) > xmax) or (min(graph_x) < xmin) or (max(graph_y) > ymax) or (min(graph_y) < ymin):
+                ax1.set_xlim(min(graph_x), max(graph_x)) # dynamic axis limits
                 ax1.set_ylim(min(graph_y), max(graph_y))
 
         time_text.set_text(time_temp % (i*timestep))
@@ -210,26 +216,9 @@ def animate_pend_with_graph(system, hide_axis=False, save=False):
 
 
     # Animation object
-    if system.double:
-        anim = animation.FuncAnimation(
-                                fig,
-                                double_pend_animate,    # animate(frames)
-                                # init_func=init,
-                                frames=np.arange(1, len(T)),
-                                interval=30,
-                                blit=False
-                                )
-    # else:
-    #     anim = animation.FuncAnimation(
-    #                             fig,
-    #                             single_pend_animate,    # animate(frames)
-    #                             # init_func=init,
-    #                             frames=np.arange(1, len(T)),
-    #                             interval=30,
-    #                             blit=False
-    #                             )
+    anim = animation.FuncAnimation(fig, animate, frames=N, interval=30)
 
     if save:
-        anim.save('_tests/animation.gif', writer='imagemagick', fps=30)
+        anim.save('_tests/single_animation.gif', writer='imagemagick', fps=30)
 
     plt.show()
